@@ -41,7 +41,7 @@ app.patch("/events/:id", (req, res) => {
 });
 
 
-app.post("/events",(req,res)=>{
+app.post("/events", async (req,res)=>{
     if (!body.title) {
     return res.status(400).json({ message: "Title is required" });
   }
@@ -55,9 +55,14 @@ app.post("/events",(req,res)=>{
     title: body.title,
     description: body.description,
   };
-  events.push(newEvent)
+  const jsonData = await fs.readFile(PATH_TO_DATA, "utf-8");
+  const parsedData = JSON.parse(jsonData);
+  parsedData.push(newEvent);
+  fs.writeFile(PATH_TO_DATA, JSON.stringify(parsedData,null,2 ),"utf-8")
   res.status(201).json(newEvent); 
 }
+
+
 )
 app.get("/events", async (req, res) => {
   const json = await fs.readFile(PATH_TO_DATA, "utf-8");
