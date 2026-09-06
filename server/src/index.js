@@ -14,6 +14,24 @@ const events = [
     description: "This is a blood donation camp",
   },
 ];
+app.patch("/events/:id", (req, res) => {
+  const body = req.body;
+  const id = req.params.id;
+
+  const index = events.findIndex((event) => event.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ message: "Event does not exist" });
+  }
+
+  events[index] = {
+    id: events[index].id,
+    title: body.title || events[index].title,
+    description: body.description || events[index].description
+  };
+
+  res.json(events[index]);
+});
 app.post("/events",(req,res)=>{
     if (!body.title) {
     return res.status(400).json({ message: "Title is required" });
