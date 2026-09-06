@@ -17,7 +17,18 @@ const events = [
 app.get("/events",(req,res)=>{
     res.json(events)
 })
+app.delete("/delete/:id",(req,res)=>{
+    const id = req.params.id
+    events = events.filter(event => event.id != id)
 
+    const eventToDelete = events.find((event) => event.id === id);
+
+  if (eventToDelete === undefined) {
+    return res.status(404).json({ message: "Event does not exist" });
+  }
+  
+    res.status(204).send()
+})
 app.listen(3000,()=>{
     console.log(`Server started on port 3000`)
 })
