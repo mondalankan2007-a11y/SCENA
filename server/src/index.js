@@ -1,6 +1,7 @@
 const express = require("express")
 const app = express()
-
+const crypto = require("crypto")
+app.use(express.json())
 const events = [
   {
     id: "101",
@@ -13,7 +14,24 @@ const events = [
     description: "This is a blood donation camp",
   },
 ];
+app.post("/events",(req,res)=>{
+    if (!body.title) {
+    return res.status(400).json({ message: "Title is required" });
+  }
 
+  if (!body.description) {
+    return res.status(400).json({ message: "Description is required" });
+  }
+
+    const newEvent = {
+    id: crypto.randomUUID(),
+    title: body.title,
+    description: body.description,
+  };
+  events.push(newEvent)
+  res.status(201).json(newEvent); 
+}
+)
 app.get("/events",(req,res)=>{
     res.json(events)
 })
@@ -26,7 +44,7 @@ app.delete("/delete/:id",(req,res)=>{
   if (eventToDelete === undefined) {
     return res.status(404).json({ message: "Event does not exist" });
   }
-  
+
     res.status(204).send()
 })
 app.listen(3000,()=>{
