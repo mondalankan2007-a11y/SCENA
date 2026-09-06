@@ -7,24 +7,53 @@ const path = require("node:path");
 
 const PATH_TO_DATA = path.join(__dirname, "data.json");
 app.use(express.json())
-const events = [
-  {
-    id: "101",
-    title: "Tekron",
-    description: "This is a tekron event",
-  },
-  {
-    id: "201",
-    title: "Blood Donation Camp",
-    description: "This is a blood donation camp",
-  },
-];
+const readFile = async () => {
+  const jsonData = await fs.readFile(PATH_TO_DATA, "utf-8");
+  const parsedData = JSON.parse(jsonData);
+  return parsedData;
+};
 
+const writeFile = async (parsedData) => {
+  await fs.writeFile(
+    PATH_TO_DATA,
+    JSON.stringify(parsedData, null, 2),
+    "utf-8",
+  );
+};
 
-app.patch("/events/:id", (req, res) => {
+app.get("/events", async (req, res) => {
+  const parsedData = await readFile();
+  res.json(parsedData);
+});
+
+app.post("/events", async (req, res) => {
+  const body = req.body;
+
+  if (!body.title) {
+    return res.status(400).json({ message: "Title is required" });
+  }
+
+  if (!body.description) {
+    return res.status(400).json({ message: "Description is required" });
+  }
+
+  const newEvent = {
+    id: crypto.randomUUID(),
+    title: body.title,
+    description: body.description,
+  };
+
+  const parsedData = await readFile();
+  parsedData.push(newEvent);
+  await writeFile(parsedData);
+  res.status(201).json(newEvent);
+});
+
+app.patch("/events/:id", async (req, res) => {
   const body = req.body;
   const id = req.params.id;
 
+  const events = await readFile();
   const index = events.findIndex((event) => event.id === id);
 
   if (index === -1) {
@@ -34,56 +63,30 @@ app.patch("/events/:id", (req, res) => {
   events[index] = {
     id: events[index].id,
     title: body.title || events[index].title,
-    description: body.description || events[index].description
+    description: body.description || events[index].description,
   };
+
+  await writeFile(events);
 
   res.json(events[index]);
 });
 
+app.delete("/events/:id", async (req, res) => {
+  const id = req.params.id;
 
-app.post("/events", async (req,res)=>{
-    if (!body.title) {
-    return res.status(400).json({ message: "Title is required" });
-  }
-
-  if (!body.description) {
-    return res.status(400).json({ message: "Description is required" });
-  }
-
-    const newEvent = {
-    id: crypto.randomUUID(),
-    title: body.title,
-    description: body.description,
-  };
-  const jsonData = await fs.readFile(PATH_TO_DATA, "utf-8");
-  const parsedData = JSON.parse(jsonData);
-  parsedData.push(newEvent);
-  fs.writeFile(PATH_TO_DATA, JSON.stringify(parsedData,null,2 ),"utf-8")
-  res.status(201).json(newEvent); 
-}
-
-
-)
-app.get("/events", async (req, res) => {
-  const json = await fs.readFile(PATH_TO_DATA, "utf-8");
-  res.set("Content-Type", "application/json");
-  res.send(json);
-});
-
-
-
-app.delete("/delete/:id",(req,res)=>{
-    const id = req.params.id
-    events = events.filter(event => event.id != id)
-
-    const eventToDelete = events.find((event) => event.id === id);
+  let events = await readFile();
+  const eventToDelete = events.find((event) => event.id === id);
 
   if (eventToDelete === undefined) {
     return res.status(404).json({ message: "Event does not exist" });
   }
 
-    res.status(204).send()
-})
-app.listen(3000,()=>{
-    console.log(`Server started on port 3000`)
-})
+  events = events.filter((event) => event.id !== id);
+  await writeFile(events);
+
+  res.status(204).send();
+});
+
+app.listen(3000, () => {
+  console.log(`Server started on port 3000`);
+});
